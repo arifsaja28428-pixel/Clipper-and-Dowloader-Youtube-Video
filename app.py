@@ -8,10 +8,11 @@ import streamlit.components.v1 as components
 import glob
 
 # --- VERIFIKASI GOOGLE ---
+# Kode ini akan langsung terdeteksi oleh Google Search Console di Streamlit Cloud
 st.write('<meta name="google-site-verification" content="mSNlY9Ov_9hLMrsA1nTq-3O7So0X-aoEUqsRbBRYRfE" />', unsafe_allow_html=True)
 
 # Konfigurasi Halaman
-st.set_page_config(page_title="ClipViral AI Pro", page_icon="✂️")
+st.set_page_config(page_title="ClipViral AI - Pro Downloader", page_icon="✂️")
 
 # --- FUNGSI PEMBERSIH ---
 def hapus_sampah_video():
@@ -23,9 +24,9 @@ def hapus_sampah_video():
 
 # --- JUDUL WEB ---
 st.title("✂️ ClipViral AI Pro")
-st.subheader("Download & Auto-Clip YouTube")
+st.subheader("YouTube Downloader & Auto-Shorts")
 
-# --- IKLAN NATIVE ---
+# --- IKLAN NATIVE (ADSTERRA) ---
 components.html("""
     <div style="text-align:center;">
         <script async="async" data-cfasync="false" src="https://pl28773812.effectivegatecpm.com/f3e16d1e59129834e7369b3d15378b28/invoke.js"></script>
@@ -42,41 +43,42 @@ if url:
         v_id = video_id_match.group(1)
         
         # PILIHAN KUALITAS
-        format_pilihan = st.selectbox("Pilih Kualitas:", ["720p (Paling Stabil)", "480p", "1080p"])
+        format_pilihan = st.selectbox("Pilih Kualitas Video:", ["720p (Stabil)", "480p (Cepat)", "1080p (HD)"])
         res = "720"
         if "480p" in format_pilihan: res = "480"
         if "1080p" in format_pilihan: res = "1080"
 
-        if st.button(f"🚀 Proses Video {res}p"):
+        if st.button(f"🚀 Proses & Download {res}p"):
             hapus_sampah_video()
             try:
-                with st.spinner("Menghubungkan ke jalur alternatif YouTube..."):
-                    # OPSI LIGHTWEIGHT & DNS BYPASS
+                with st.spinner("Sedang mengambil data video dari YouTube..."):
+                    # OPSI ANTI-BLOCK & DNS FIX
                     ydl_opts = {
-                        'format': f'best[height<={res}][ext=mp4]', 
+                        'format': f'best[height<={res}][ext=mp4]',
                         'outtmpl': 'full_video.mp4',
                         'overwrites': True,
                         'nocheckcertificate': True,
                         'geo_bypass': True,
-                        'socket_timeout': 60,
                         'quiet': True,
                         'no_warnings': True,
-                        'check_formats': False, # Melewati pengecekan format untuk hindari error DNS
+                        # Menyamar sebagai Browser agar tidak Error 403
+                        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
                     }
                     
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                         ydl.download([url])
 
-                    # --- PROSES KLIP ---
-                    st.write("### ✂️ Hasil Klip Viral (9:16):")
+                    # --- PROSES KLIP OTOMATIS (9:16) ---
+                    st.write("### ✂️ Klip Viral Otomatis:")
                     cols = st.columns(3)
                     video_full = VideoFileClip("full_video.mp4")
                     
-                    momen = [10, 60, 120]
+                    # Cari Momen Penting
+                    momen = [15, 75, 140]
                     try:
                         ts = YouTubeTranscriptApi.get_transcript(v_id, languages=['id', 'en'])
-                        momen = [t['start'] for t in ts if any(k in t['text'].lower() for k in ['wah','keren','tips','gila','parah'])][:3]
-                        if len(momen) < 3: momen = [15, 70, 130]
+                        momen = [t['start'] for t in ts if any(k in t['text'].lower() for k in ['wah','keren','gila','rahasia','tips'])][:3]
+                        if len(momen) < 3: momen = [10, 60, 120]
                     except: pass
 
                     for i, start in enumerate(momen):
@@ -85,6 +87,8 @@ if url:
                         end_time = min(start + 55, dur)
                         
                         clip = video_full.subclip(start, end_time)
+                        
+                        # Resize & Crop ke 9:16
                         w, h = clip.size
                         target_w = h * 9 / 16
                         final = clip.cropped(x1=(w-target_w)/2, y1=0, width=target_w, height=h)
@@ -95,27 +99,29 @@ if url:
                         with cols[i]:
                             st.video(out_name)
                             with open(out_name, "rb") as f:
-                                st.download_button(f"📥 Download {i+1}", f, file_name=f"clip_{i+1}.mp4", key=f"dl_{i}")
+                                st.download_button(f"📥 Download {i+1}", f, file_name=f"shorts_{i+1}.mp4", key=f"dl_{i}")
 
                     video_full.close()
 
-                    # --- DOWNLOAD FULL ---
+                    # --- DOWNLOAD FULL VIDEO ---
                     st.markdown("---")
+                    st.write(f"### 📺 Video Original {res}p:")
                     with open("full_video.mp4", "rb") as f_full:
-                        st.download_button(f"📥 Download Full Video {res}p", f_full, file_name=f"full_{res}p.mp4", use_container_width=True)
-                
-                st.success("Selesai!")
+                        st.download_button(f"📥 Download Video Utuh", f_full, file_name=f"original_{res}p.mp4", use_container_width=True)
+
+                st.success("Berhasil diproses!")
 
             except Exception as e:
-                st.error(f"Koneksi Hugging Face ke YouTube terganggu: {e}")
-                st.warning("SOLUSI: Masuk ke tab SETTINGS lalu klik FACTORY REBOOT di bagian bawah halaman.")
+                st.error(f"Terjadi Kendala: {e}")
                 hapus_sampah_video()
     else:
-        st.error("Link tidak valid.")
+        st.error("Link YouTube tidak valid.")
 
 # --- FOOTER ---
 st.markdown("---")
-st.caption("© 2026 ClipViral AI - Emergency Patch")
+st.caption("© 2026 ClipViral AI - Cloud Hosting Version")
 
-# --- IKLAN SOCIAL BAR ---
-components.html("""<script src="https://pl28773816.effectivegatecpm.com/72/34/5f/72345f53f09912e7e221655eb41baf9b.js"></script>""", height=0)
+# --- IKLAN SOCIAL BAR (ADSTERRA) ---
+components.html("""
+    <script src="https://pl28773816.effectivegatecpm.com/72/34/5f/72345f53f09912e7e221655eb41baf9b.js"></script>
+""", height=0)
