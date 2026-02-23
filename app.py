@@ -8,11 +8,10 @@ import streamlit.components.v1 as components
 import glob
 
 # --- VERIFIKASI GOOGLE ---
-# Kode ini akan langsung terdeteksi oleh Google Search Console di Streamlit Cloud
 st.write('<meta name="google-site-verification" content="mSNlY9Ov_9hLMrsA1nTq-3O7So0X-aoEUqsRbBRYRfE" />', unsafe_allow_html=True)
 
 # Konfigurasi Halaman
-st.set_page_config(page_title="ClipViral AI - Pro Downloader", page_icon="✂️")
+st.set_page_config(page_title="ClipViral AI - Cloud Version", page_icon="✂️")
 
 # --- FUNGSI PEMBERSIH ---
 def hapus_sampah_video():
@@ -24,7 +23,7 @@ def hapus_sampah_video():
 
 # --- JUDUL WEB ---
 st.title("✂️ ClipViral AI Pro")
-st.subheader("YouTube Downloader & Auto-Shorts")
+st.subheader("Ubah YouTube jadi Shorts Otomatis")
 
 # --- IKLAN NATIVE (ADSTERRA) ---
 components.html("""
@@ -43,16 +42,16 @@ if url:
         v_id = video_id_match.group(1)
         
         # PILIHAN KUALITAS
-        format_pilihan = st.selectbox("Pilih Kualitas Video:", ["720p (Stabil)", "480p (Cepat)", "1080p (HD)"])
+        format_pilihan = st.selectbox("Pilih Kualitas Video:", ["720p (Paling Stabil)", "480p", "1080p"])
         res = "720"
         if "480p" in format_pilihan: res = "480"
         if "1080p" in format_pilihan: res = "1080"
 
-        if st.button(f"🚀 Proses & Download {res}p"):
+        if st.button(f"🚀 Proses Video {res}p"):
             hapus_sampah_video()
             try:
-                with st.spinner("Sedang mengambil data video dari YouTube..."):
-                    # OPSI ANTI-BLOCK & DNS FIX
+                with st.spinner("Menembus sistem keamanan YouTube..."):
+                    # OPSI ANTI-403 FORBIDDEN (Paling Kuat)
                     ydl_opts = {
                         'format': f'best[height<={res}][ext=mp4]',
                         'outtmpl': 'full_video.mp4',
@@ -61,34 +60,40 @@ if url:
                         'geo_bypass': True,
                         'quiet': True,
                         'no_warnings': True,
-                        # Menyamar sebagai Browser agar tidak Error 403
-                        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+                        # Header Browser untuk meniru manusia
+                        'http_headers': {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                            'Accept-Language': 'en-US,en;q=0.5',
+                            'Referer': 'https://www.google.com/',
+                            'Origin': 'https://www.youtube.com'
+                        }
                     }
                     
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                         ydl.download([url])
 
-                    # --- PROSES KLIP OTOMATIS (9:16) ---
-                    st.write("### ✂️ Klip Viral Otomatis:")
+                    # --- PROSES PEMBUATAN KLIP ---
+                    st.write("### ✂️ Hasil Klip Shorts (Vertical):")
                     cols = st.columns(3)
                     video_full = VideoFileClip("full_video.mp4")
                     
-                    # Cari Momen Penting
-                    momen = [15, 75, 140]
+                    # Deteksi momen lewat kata kunci di subtitle
+                    momen = [10, 60, 120]
                     try:
                         ts = YouTubeTranscriptApi.get_transcript(v_id, languages=['id', 'en'])
-                        momen = [t['start'] for t in ts if any(k in t['text'].lower() for k in ['wah','keren','gila','rahasia','tips'])][:3]
-                        if len(momen) < 3: momen = [10, 60, 120]
+                        momen = [t['start'] for t in ts if any(k in t['text'].lower() for k in ['wah','keren','tips','gila','parah','wow'])][:3]
+                        if len(momen) < 3: momen = [15, 75, 140]
                     except: pass
 
                     for i, start in enumerate(momen):
                         dur = video_full.duration
                         if start >= dur: start = 0
-                        end_time = min(start + 55, dur)
+                        end_time = min(start + 50, dur) # Potong 50 detik
                         
                         clip = video_full.subclip(start, end_time)
                         
-                        # Resize & Crop ke 9:16
+                        # Resize & Auto-Crop ke 9:16
                         w, h = clip.size
                         target_w = h * 9 / 16
                         final = clip.cropped(x1=(w-target_w)/2, y1=0, width=target_w, height=h)
@@ -99,27 +104,33 @@ if url:
                         with cols[i]:
                             st.video(out_name)
                             with open(out_name, "rb") as f:
-                                st.download_button(f"📥 Download {i+1}", f, file_name=f"shorts_{i+1}.mp4", key=f"dl_{i}")
+                                st.download_button(f"📥 Download {i+1}", f, file_name=f"shorts_{i+1}.mp4", key=f"btn_{i}")
 
                     video_full.close()
 
-                    # --- DOWNLOAD FULL VIDEO ---
+                    # --- TOMBOL DOWNLOAD VIDEO ASLI ---
                     st.markdown("---")
-                    st.write(f"### 📺 Video Original {res}p:")
+                    st.write(f"### 📺 Video Full ({res}p):")
                     with open("full_video.mp4", "rb") as f_full:
-                        st.download_button(f"📥 Download Video Utuh", f_full, file_name=f"original_{res}p.mp4", use_container_width=True)
-
-                st.success("Berhasil diproses!")
+                        st.download_button(
+                            label=f"📥 Download Video Original",
+                            data=f_full,
+                            file_name=f"original_{res}p.mp4",
+                            use_container_width=True
+                        )
+                
+                st.success("Selesai! Klik tombol download untuk menyimpan.")
 
             except Exception as e:
                 st.error(f"Terjadi Kendala: {e}")
+                st.info("Saran: Coba video lain atau klik 'Reboot App' di dashboard Streamlit.")
                 hapus_sampah_video()
     else:
         st.error("Link YouTube tidak valid.")
 
 # --- FOOTER ---
 st.markdown("---")
-st.caption("© 2026 ClipViral AI - Cloud Hosting Version")
+st.caption("© 2026 ClipViral AI - Powered by Streamlit Cloud")
 
 # --- IKLAN SOCIAL BAR (ADSTERRA) ---
 components.html("""
